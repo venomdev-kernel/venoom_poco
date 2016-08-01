@@ -61,6 +61,7 @@ obj-$(CONFIG_IOMMU_SUPPORT)	+= iommu/
 obj-y				+= gpu/
 
 obj-$(CONFIG_CONNECTOR)		+= connector/
+obj-$(CONFIG_ENERGY_MODEL)	+= energy_model/
 
 # i810fb and intelfb depend on char/agp/
 obj-$(CONFIG_FB_I810)           += video/fbdev/i810/
