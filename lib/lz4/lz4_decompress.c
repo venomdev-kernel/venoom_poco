@@ -62,6 +62,27 @@ static int lz4_uncompress(const char *source, char *dest, int osize)
 	unsigned token;
 	size_t length;
 
+	const BYTE * const dictEnd = (const BYTE *)dictStart + dictSize;
+	static const unsigned int dec32table[] = { 0, 1, 2, 1, 4, 4, 4, 4 };
+	static const int dec64table[] = { 0, 0, 0, -1, 0, 1, 2, 3 };
+
+	const int safeDecode = (endOnInput == endOnInputSize);
+	const int checkOffset = ((safeDecode) && (dictSize < (int)(64 * KB)));
+
+	/* Special cases */
+	/* targetOutputSize too high => decode everything */
+	if ((partialDecoding) && (oexit > oend - MFLIMIT))
+		oexit = oend - MFLIMIT;
+
+	/* Empty output buffer */
+	if ((endOnInput) && (unlikely(outputSize == 0)))
+		return ((inputSize == 1) && (*ip == 0)) ? 0 : -1;
+
+	if ((!endOnInput) && (unlikely(outputSize == 0)))
+		return (*ip == 0 ? 1 : -1);
+
+	/* Main Loop : decode sequences */
+
 	while (1) {
 
 		/* get runlength */
