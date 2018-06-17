@@ -227,6 +227,9 @@ struct schedtune {
 	 * the value when Dynamic SchedTune Boost is reset.
 	 */
 	int boost_default;
+
+	/* Dynamic boost value for tasks on that SchedTune CGroup */
+	int dynamic_boost;
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 };
 
@@ -268,6 +271,7 @@ root_schedtune = {
 	.prefer_idle = 0,
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 	.boost_default = 1,
+	.dynamic_boost = 1,
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 };
 
@@ -920,6 +924,7 @@ boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
 	return 0;
 }
 
+<<<<<<< HEAD
 #ifdef CONFIG_STUNE_ASSIST
 #ifdef CONFIG_SCHED_WALT
 static int sched_boost_override_write_wrapper(struct cgroup_subsys_state *css,
@@ -959,6 +964,27 @@ static int prefer_idle_write_wrapper(struct cgroup_subsys_state *css,
 	return prefer_idle_write(css, cft, prefer_idle);
 }
 #endif
+=======
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+static s64
+dynamic_boost_read(struct cgroup_subsys_state *css, struct cftype *cft)
+{
+	struct schedtune *st = css_st(css);
+
+	return st->dynamic_boost;
+}
+
+static int
+dynamic_boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
+	    s64 dynamic_boost)
+{
+	struct schedtune *st = css_st(css);
+	st->dynamic_boost = dynamic_boost;
+
+	return 0;
+}
+#endif // CONFIG_DYNAMIC_STUNE_BOOST
+>>>>>>> f3c52b131f3c... sched/tune: Create dynamic_boost SchedTune parameter
 
 static struct cftype files[] = {
 #ifdef CONFIG_SCHED_WALT
@@ -983,6 +1009,13 @@ static struct cftype files[] = {
 		.read_u64 = prefer_idle_read,
 		.write_u64 = prefer_idle_write_wrapper,
 	},
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	{
+		.name = "dynamic_boost",
+		.read_s64 = dynamic_boost_read,
+		.write_s64 = dynamic_boost_write,
+	},
+#endif // CONFIG_DYNAMIC_STUNE_BOOST
 	{ }	/* terminate */
 };
 
