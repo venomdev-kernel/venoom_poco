@@ -216,8 +216,8 @@ static void drawobj_sync_func(struct kgsl_device *device,
 {
 	struct kgsl_drawobj_sync_event *event = priv;
 
-	trace_syncpoint_timestamp_expire(event->syncobj,
-		event->context, event->timestamp);
+//	trace_syncpoint_timestamp_expire(event->syncobj,
+//		event->context, event->timestamp);
 
 	/*
 	 * Put down the context ref count only if
@@ -354,8 +354,8 @@ static bool drawobj_sync_fence_func(void *priv)
 	int i;
 
 	for (i = 0; i < event->info.num_fences; i++)
-		trace_syncpoint_fence_expire(event->syncobj,
-			event->info.fences[i].name);
+//		trace_syncpoint_fence_expire(event->syncobj,
+//			event->info.fences[i].name);
 
 	/*
 	 * Only call kgsl_drawobj_put() if it's not marked for cancellation
@@ -414,7 +414,7 @@ static int drawobj_add_sync_fence(struct kgsl_device *device,
 		 * message so we can track that
 		 */
 		if (ret == 0)
-			trace_syncpoint_fence_expire(syncobj, "signaled");
+//			trace_syncpoint_fence_expire(syncobj, "signaled");
 
 		return ret;
 	}
@@ -488,9 +488,10 @@ static int drawobj_add_sync_timestamp(struct kgsl_device *device,
 	if (ret) {
 		clear_bit(event->id, &syncobj->pending);
 		kgsl_drawobj_put(drawobj);
-	} else {
-		trace_syncpoint_timestamp(syncobj, context, sync->timestamp);
-	}
+	} 
+	//else {
+	//	trace_syncpoint_timestamp(syncobj, context, sync->timestamp);
+	//}
 
 done:
 	if (ret)
