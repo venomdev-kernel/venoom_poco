@@ -431,7 +431,7 @@ rename:
 	blocking_notifier_call_chain(&group->notifier,
 				     IOMMU_GROUP_NOTIFY_ADD_DEVICE, dev);
 
-	trace_add_device_to_group(group->id, dev);
+//	trace_add_device_to_group(group->id, dev);
 
 	pr_info("Adding device %s to group %d\n", dev_name(dev), group->id);
 
@@ -489,7 +489,7 @@ void iommu_group_remove_device(struct device *dev)
 	sysfs_remove_link(group->devices_kobj, device->name);
 	sysfs_remove_link(&dev->kobj, "iommu_group");
 
-	trace_remove_device_from_group(group->id, dev);
+//	trace_remove_device_from_group(group->id, dev);
 
 	kfree(device->name);
 	kfree(device);
@@ -1106,7 +1106,7 @@ static int __iommu_attach_device(struct iommu_domain *domain,
 
 	ret = domain->ops->attach_dev(domain, dev);
 	if (!ret) {
-		trace_attach_device_to_domain(dev);
+//		trace_attach_device_to_domain(dev);
 		iommu_debug_attach_device(domain, dev);
 
 		if (!strnlen(domain->name, IOMMU_DOMAIN_NAME_LEN)) {
@@ -1153,7 +1153,7 @@ static void __iommu_detach_device(struct iommu_domain *domain,
 		return;
 
 	domain->ops->detach_dev(domain, dev);
-	trace_detach_device_from_domain(dev);
+//	trace_detach_device_from_domain(dev);
 }
 
 void iommu_detach_device(struct iommu_domain *domain, struct device *dev)
@@ -1381,6 +1381,7 @@ int iommu_map(struct iommu_domain *domain, unsigned long iova,
 	if (!IS_ALIGNED(iova | paddr | size, min_pagesz)) {
 		pr_err("unaligned: iova 0x%lx pa %pa size 0x%zx min_pagesz 0x%x\n",
 		       iova, &paddr, size, min_pagesz);
+
 		return -EINVAL;
 	}
 
@@ -1405,9 +1406,10 @@ int iommu_map(struct iommu_domain *domain, unsigned long iova,
 	/* unroll mapping in case something went wrong */
 	if (ret)
 		iommu_unmap(domain, orig_iova, orig_size - size);
-	else
-		trace_map(domain, orig_iova, orig_paddr, orig_size, prot);
+//	else
+//		trace_map(orig_iova, paddr, orig_size);
 
+//	trace_map_end(iova, paddr, size);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(iommu_map);
@@ -1416,7 +1418,7 @@ size_t iommu_unmap(struct iommu_domain *domain, unsigned long iova, size_t size)
 {
 	size_t unmapped_page, unmapped = 0;
 	unsigned int min_pagesz;
-	unsigned long orig_iova = iova;
+//	unsigned long orig_iova = iova;
 
 	if (unlikely(domain->ops->unmap == NULL ||
 		     domain->pgsize_bitmap == 0UL))
@@ -1459,7 +1461,8 @@ size_t iommu_unmap(struct iommu_domain *domain, unsigned long iova, size_t size)
 		unmapped += unmapped_page;
 	}
 
-	trace_unmap(domain, orig_iova, size, unmapped);
+//	trace_unmap(orig_iova, size, unmapped);
+//	trace_unmap_end(orig_iova, 0, size);
 	return unmapped;
 }
 EXPORT_SYMBOL_GPL(iommu_unmap);
