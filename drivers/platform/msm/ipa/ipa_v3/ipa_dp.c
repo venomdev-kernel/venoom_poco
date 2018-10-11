@@ -815,7 +815,7 @@ static void ipa3_handle_rx(struct ipa3_sys_context *sys)
 
 	} while (inactive_cycles <= POLLING_INACTIVITY_RX);
 
-	trace_poll_to_intr3(sys->ep->client);
+//	trace_poll_to_intr3(sys->ep->client);
 	ipa3_rx_switch_to_intr_mode(sys);
 	if (ipa3_ctx->use_ipa_pm)
 		ipa_pm_deferred_deactivate(sys->pm_hdl);
