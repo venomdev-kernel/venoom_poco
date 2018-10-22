@@ -1,5 +1,5 @@
 /* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2019 XiaoMi, Inc.
+ * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -24,6 +24,7 @@
 #include "dsi_display.h"
 #include "sde_crtc.h"
 #include "sde_rm.h"
+#include "exposure_adjustment.h"
 
 #define BL_NODE_NAME_SIZE 32
 
@@ -88,19 +89,14 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	if (brightness > display->panel->bl_config.bl_max_level)
 		brightness = display->panel->bl_config.bl_max_level;
 
-	if (!display->panel->bl_config.bl_remap_flag) {
-		/* map UI brightness into driver backlight level with rounding */
-		bl_lvl = mult_frac(brightness, display->panel->bl_config.bl_max_level,
-				display->panel->bl_config.brightness_max_level);
-	} else {
-		bl_lvl = brightness;
-	}
+	/* map UI brightness into driver backlight level with rounding */
+	bl_lvl = mult_frac(brightness, display->panel->bl_config.bl_max_level,
+			display->panel->bl_config.brightness_max_level);
 
 	if (!bl_lvl && brightness)
 		bl_lvl = 1;
 
-	if (bl_lvl && bl_lvl < display->panel->bl_config.bl_min_level
-		&& !display->panel->bl_config.bl_remap_flag)
+	if (bl_lvl && bl_lvl < display->panel->bl_config.bl_min_level)
 		bl_lvl = display->panel->bl_config.bl_min_level;
 
 	if (display->panel->bl_config.bl_update ==
@@ -108,6 +104,12 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 		c_conn->unset_bl_level = bl_lvl;
 		return 0;
 	}
+
+#ifdef CONFIG_EXPOSURE_ADJUSTMENT
+	if (ea_panel_on()) {
+		bl_lvl = ea_panel_calc_backlight(bl_lvl);
+	}
+#endif
 
 	if (c_conn->ops.set_backlight) {
 		event.type = DRM_EVENT_SYS_BACKLIGHT;
@@ -704,10 +706,6 @@ void sde_connector_helper_bridge_enable(struct drm_connector *connector)
 		sde_encoder_wait_for_event(c_conn->encoder,
 				MSM_ENC_TX_COMPLETE);
 	c_conn->allow_bl_update = true;
-
-	/*after the first frame,need to delay some time for visionox*/
-	if (display->panel->bl_config.bl_update_delay)
-		msleep(display->panel->bl_config.bl_update_delay);
 
 	if (!display->is_first_boot && c_conn->bl_device) {
 		c_conn->bl_device->props.power = FB_BLANK_UNBLANK;
@@ -1388,14 +1386,22 @@ void sde_connector_commit_reset(struct drm_connector *connector, ktime_t ts)
 static void sde_connector_update_hdr_props(struct drm_connector *connector)
 {
 	struct sde_connector *c_conn = to_sde_connector(connector);
-	struct drm_msm_ext_hdr_properties hdr = {0};
+	struct drm_msm_ext_hdr_properties hdr = {};
 
-	hdr.hdr_metadata_type_one = connector->hdr_metadata_type_one ? 1 : 0;
-	hdr.hdr_supported = connector->hdr_supported ? 1 : 0;
-	hdr.hdr_eotf = connector->hdr_eotf;
-	hdr.hdr_max_luminance = connector->hdr_max_luminance;
-	hdr.hdr_avg_luminance = connector->hdr_avg_luminance;
-	hdr.hdr_min_luminance = connector->hdr_min_luminance;
+	hdr.hdr_supported = connector->hdr_supported;
+
+	if (hdr.hdr_supported) {
+		hdr.hdr_eotf = connector->hdr_eotf;
+		hdr.hdr_metadata_type_one = connector->hdr_metadata_type_one;
+		hdr.hdr_max_luminance = connector->hdr_max_luminance;
+		hdr.hdr_avg_luminance = connector->hdr_avg_luminance;
+		hdr.hdr_min_luminance = connector->hdr_min_luminance;
+
+		msm_property_set_blob(&c_conn->property_info,
+			      &c_conn->blob_ext_hdr,
+			      &hdr,
+			      sizeof(hdr),
+			      CONNECTOR_PROP_EXT_HDR_INFO);
 
 	}
 }
