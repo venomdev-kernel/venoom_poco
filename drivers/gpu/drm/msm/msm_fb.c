@@ -36,8 +36,6 @@ struct msm_framebuffer {
 	void *vaddr[MAX_PLANE];
 	atomic_t kmap_count;
 	u32 flags;
-	cpu_input_boost_kick();
-	devfreq_boost_kick(DEVFREQ_MSM_CPUBW);
 };
 #define to_msm_framebuffer(x) container_of(x, struct msm_framebuffer, base)
 
@@ -47,6 +45,8 @@ static int msm_framebuffer_create_handle(struct drm_framebuffer *fb,
 		unsigned int *handle)
 {
 	struct msm_framebuffer *msm_fb;
+		cpu_input_boost_kick();
+		devfreq_boost_kick(DEVFREQ_MSM_CPUBW);
 
 	if (!fb) {
 		DRM_ERROR("from:%pS null fb\n", __builtin_return_address(0));
