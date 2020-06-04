@@ -1,14 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (C) 2018, Sultan Alsawaf <sultanxda@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Copyright (C) 2018-2019 Sultan Alsawaf <sultan@kerneltoast.com>.
  */
 
 #define pr_fmt(fmt) "devfreq_boost: " fmt
@@ -16,6 +8,21 @@
 #include <linux/devfreq_boost.h>
 #include <linux/fb.h>
 #include <linux/input.h>
+
+struct boost_dev {
+	struct workqueue_struct *wq;
+	struct devfreq *df;
+	struct work_struct input_boost;
+	struct delayed_work input_unboost;
+	struct work_struct max_boost;
+	struct delayed_work max_unboost;
+	unsigned long abs_min_freq;
+	unsigned long boost_freq;
+	unsigned long max_boost_expires;
+	unsigned long max_boost_jiffies;
+	bool disable;
+	spinlock_t lock;
+};
 
 struct df_boost_drv {
 	struct boost_dev devices[DEVFREQ_MAX];
@@ -49,7 +56,7 @@ void devfreq_boost_kick(enum df_device device)
 }
 
 static void __devfreq_boost_kick_max(struct boost_dev *b,
-	unsigned int duration_ms)
+				     unsigned int duration_ms)
 {
 	unsigned long flags, new_expires;
 
@@ -96,16 +103,6 @@ void devfreq_register_boost_device(enum df_device device, struct devfreq *df)
 	spin_lock_irqsave(&b->lock, flags);
 	b->df = df;
 	spin_unlock_irqrestore(&b->lock, flags);
-}
-
-struct boost_dev *devfreq_get_boost_dev(enum df_device device)
-{
-	struct df_boost_drv *d = df_boost_drv_g;
-
-	if (!d)
-		return NULL;
-
-	return d->devices + device;
 }
 
 static unsigned long devfreq_abs_min_freq(struct boost_dev *b)
@@ -249,7 +246,7 @@ static void devfreq_max_unboost(struct work_struct *work)
 }
 
 static int fb_notifier_cb(struct notifier_block *nb,
-	unsigned long action, void *data)
+			  unsigned long action, void *data)
 {
 	struct df_boost_drv *d = container_of(nb, typeof(*d), fb_notif);
 	struct fb_event *evdata = data;
@@ -277,7 +274,8 @@ static int fb_notifier_cb(struct notifier_block *nb,
 }
 
 static void devfreq_boost_input_event(struct input_handle *handle,
-	unsigned int type, unsigned int code, int value)
+				      unsigned int type, unsigned int code,
+				      int value)
 {
 	struct df_boost_drv *d = handle->handler->private;
 	int i;
@@ -287,7 +285,8 @@ static void devfreq_boost_input_event(struct input_handle *handle,
 }
 
 static int devfreq_boost_input_connect(struct input_handler *handler,
-	struct input_dev *dev, const struct input_device_id *id)
+				       struct input_dev *dev,
+				       const struct input_device_id *id)
 {
 	struct input_handle *handle;
 	int ret;
@@ -332,7 +331,7 @@ static const struct input_device_id devfreq_boost_ids[] = {
 		.evbit = { BIT_MASK(EV_ABS) },
 		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
 			BIT_MASK(ABS_MT_POSITION_X) |
-			BIT_MASK(ABS_MT_POSITION_Y) },
+			BIT_MASK(ABS_MT_POSITION_Y) }
 	},
 	/* Touchpad */
 	{
@@ -340,12 +339,12 @@ static const struct input_device_id devfreq_boost_ids[] = {
 			INPUT_DEVICE_ID_MATCH_ABSBIT,
 		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
 		.absbit = { [BIT_WORD(ABS_X)] =
-			BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
+			BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) }
 	},
 	/* Keypad */
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
-		.evbit = { BIT_MASK(EV_KEY) },
+		.evbit = { BIT_MASK(EV_KEY) }
 	},
 	{ }
 };
