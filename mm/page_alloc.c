@@ -2738,7 +2738,7 @@ struct page *buffered_rmqueue(struct zone *preferred_zone,
 			if (alloc_flags & ALLOC_HARDER) {
 				page = __rmqueue_smallest(zone, order, MIGRATE_HIGHATOMIC);
 				if (page)
-//					trace_mm_page_alloc_zone_locked(page, order, migratetype);
+				trace_mm_page_alloc_zone_locked(page, order, migratetype);
 			}
 			if (!page && migratetype == MIGRATE_MOVABLE &&
 					gfp_flags & __GFP_CMA)
