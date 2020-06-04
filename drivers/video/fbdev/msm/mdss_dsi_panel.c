@@ -41,6 +41,10 @@
 
 DEFINE_LED_TRIGGER(bl_led_trigger);
 
+#ifdef CONFIG_LAZYPLUG
+extern void lazyplug_enter_lazy(bool enter, bool video);
+#endif
+
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
 {
 	if (ctrl->pwm_pmi)
