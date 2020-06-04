@@ -1,5 +1,5 @@
 /* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
- * Copyright (C) 2018 XiaoMi, Inc.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -282,6 +282,12 @@ enum ttf_mode {
 	TTF_MODE_QNOVO,
 };
 
+struct optimize_sram_data {
+	int addr;
+	int offset;
+	int val;
+};
+
 /* DT parameters for FG device */
 struct fg_dt_props {
 	bool	force_load_profile;
@@ -330,6 +336,9 @@ struct fg_dt_props {
 	int	esr_meas_curr_ma;
 	int	sync_sleep_threshold_ma;
 	int	bmd_en_delay_ms;
+	bool	optimize_sram;
+	struct	optimize_sram_data *optimize_sram_seq;
+	int	optimize_sram_seq_len;
 	int	ki_coeff_full_soc_dischg;
 	int	ki_coeff_hi_chg;
 	int	jeita_thresholds[NUM_JEITA_LEVELS];
@@ -449,6 +458,11 @@ struct batt_params {
 	struct timespec		last_soc_change_time;
 };
 
+struct fg_saved_data {
+	union power_supply_propval val;
+	unsigned long last_req_expires;
+};
+
 struct fg_chip {
 	struct thermal_zone_device	*tz_dev;
 	struct device		*dev;
@@ -548,6 +562,7 @@ struct fg_chip {
 	struct alarm		esr_filter_alarm;
 	ktime_t			last_delta_temp_time;
 	struct delayed_work	empty_restart_fg_work;
+	struct fg_saved_data	saved_data[POWER_SUPPLY_PROP_MAX];
 };
 
 /* Debugfs data structures are below */
