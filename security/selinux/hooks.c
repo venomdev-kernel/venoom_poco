@@ -5146,20 +5146,26 @@ static int selinux_nlmsg_perm(struct sock *sk, struct sk_buff *skb)
 
 		rc = selinux_nlmsg_lookup(sclass, nlh->nlmsg_type, &perm);
 		if (rc == 0) {
-			rc = sock_has_perm(current, sk, perm);
+			rc = sock_has_perm(sk, perm);
 			if (rc)
 				return rc;
 		} else if (rc == -EINVAL) {
 			/* -EINVAL is a missing msg/perm mapping */
 			pr_warn_ratelimited("SELinux: unrecognized netlink"
-			       " message: protocol=%hu nlmsg_type=%hu sclass=%s"
-			       " pig=%d comm=%s\n",
-			       sk->sk_protocol, nlh->nlmsg_type,
-			       secclass_map[sksec->sclass - 1].name,
-			       task_pid_nr(current), current->comm);
+				" message: protocol=%hu nlmsg_type=%hu sclass=%s"
+				" pid=%d comm=%s\n",
+				sk->sk_protocol, nlh->nlmsg_type,
+				secclass_map[sclass - 1].name,
+				task_pid_nr(current), current->comm);
 			if (!enforcing_enabled(&selinux_state) ||
 			    security_get_allow_unknown(&selinux_state))
-				err = 0;
+				return rc;
+			rc = 0;
+		} else if (rc == -ENOENT) {
+			/* -ENOENT is a missing socket/class mapping, ignore */
+			rc = 0;
+		} else {
+			return rc;
 		}
 
 		/* move to the next message after applying netlink padding */
@@ -5170,9 +5176,7 @@ static int selinux_nlmsg_perm(struct sock *sk, struct sk_buff *skb)
 		data += msg_len;
 	}
 
-	err = sock_has_perm(sk, perm);
-out:
-	return err;
+	return rc;
 }
 
 #ifdef CONFIG_NETFILTER
