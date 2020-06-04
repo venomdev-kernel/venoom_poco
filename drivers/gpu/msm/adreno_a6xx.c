@@ -3881,7 +3881,6 @@ struct adreno_gpudev adreno_a6xx_gpudev = {
 	.snapshot = a6xx_snapshot,
 	.irq = &a6xx_irq,
 	.snapshot_data = &a6xx_snapshot_data,
-	.irq_trace = trace_kgsl_a5xx_irq_status,
 	.num_prio_levels = KGSL_PRIORITY_MAX_RB_LEVELS,
 	.platform_setup = a6xx_platform_setup,
 	.init = a6xx_init,

@@ -103,6 +103,8 @@ extern struct cpumask __cpu_isolated_mask;
 #define num_present_cpus()	cpumask_weight(cpu_present_mask)
 #define num_active_cpus()	cpumask_weight(cpu_active_mask)
 #define num_isolated_cpus()	cpumask_weight(cpu_isolated_mask)
+extern const struct cpumask *const cpu_lp_mask;
+extern const struct cpumask *const cpu_perf_mask;
 #define num_online_uniso_cpus()						\
 ({									\
 	cpumask_t mask;							\
