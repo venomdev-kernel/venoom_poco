@@ -1,4 +1,4 @@
-#ifndef __LINUX_CPUMASK_H
+	#ifndef __LINUX_CPUMASK_H
 #define __LINUX_CPUMASK_H
 
 /*
@@ -115,6 +115,8 @@ extern struct cpumask __cpu_isolated_mask;
 #define cpu_present(cpu)	cpumask_test_cpu((cpu), cpu_present_mask)
 #define cpu_active(cpu)		cpumask_test_cpu((cpu), cpu_active_mask)
 #define cpu_isolated(cpu)	cpumask_test_cpu((cpu), cpu_isolated_mask)
+extern const struct cpumask *const cpu_lp_mask;
+extern const struct cpumask *const cpu_perf_mask;
 #else
 #define num_online_cpus()	1U
 #define num_possible_cpus()	1U
