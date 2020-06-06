@@ -1051,7 +1051,7 @@ static int adreno_of_get_power(struct adreno_device *adreno_dev,
 
 //	device->pwrctrl.input_disable = of_property_read_bool(node,
 //		"qcom,disable-wake-on-touch");
-	device->pwrctrl.input_disable = true;
+//	device->pwrctrl.input_disable = true;
 
 	return 0;
 }
