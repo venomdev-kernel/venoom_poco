@@ -951,7 +951,6 @@ boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
 	return 0;
 }
 
-<<<<<<< HEAD
 #ifdef CONFIG_STUNE_ASSIST
 #ifdef CONFIG_SCHED_WALT
 static int sched_boost_override_write_wrapper(struct cgroup_subsys_state *css,
@@ -991,7 +990,7 @@ static int prefer_idle_write_wrapper(struct cgroup_subsys_state *css,
 	return prefer_idle_write(css, cft, prefer_idle);
 }
 #endif
-=======
+
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 static s64
 sched_boost_read(struct cgroup_subsys_state *css, struct cftype *cft)
@@ -1048,7 +1047,6 @@ boost_slots_release(struct schedtune *st)
 	}
 }
 #endif // CONFIG_DYNAMIC_STUNE_BOOST
->>>>>>> f3c52b131f3c... sched/tune: Create dynamic_boost SchedTune parameter
 
 static struct cftype files[] = {
 #ifdef CONFIG_SCHED_WALT
