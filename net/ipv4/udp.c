@@ -1307,7 +1307,7 @@ try_again:
 	}
 
 	if (unlikely(err)) {
-//		trace_kfree_skb(skb, udp_recvmsg);
+		trace_kfree_skb(skb, udp_recvmsg);
 		if (!peeked) {
 			atomic_inc(&sk->sk_drops);
 			UDP_INC_STATS(sock_net(sk),
@@ -1485,7 +1485,7 @@ int __udp_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 					is_udplite);
 		UDP_INC_STATS(sock_net(sk), UDP_MIB_INERRORS, is_udplite);
 		kfree_skb(skb);
-//		trace_udp_fail_queue_rcv_skb(rc, sk);
+		trace_udp_fail_queue_rcv_skb(rc, sk);
 		return -1;
 	}
 
