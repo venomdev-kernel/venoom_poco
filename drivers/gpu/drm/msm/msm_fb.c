@@ -18,6 +18,8 @@
 
 #include <linux/dma-mapping.h>
 #include <linux/dma-buf.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/devfreq_boost.h>
 
 #include "msm_drv.h"
 #include "msm_kms.h"
@@ -34,6 +36,8 @@ struct msm_framebuffer {
 	void *vaddr[MAX_PLANE];
 	atomic_t kmap_count;
 	u32 flags;
+	cpu_input_boost_kick();
+	devfreq_boost_kick(DEVFREQ_MSM_CPUBW);
 };
 #define to_msm_framebuffer(x) container_of(x, struct msm_framebuffer, base)
 
