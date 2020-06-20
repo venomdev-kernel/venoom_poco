@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2019 XiaoMi, Inc.
+ * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -21,6 +21,7 @@
 #include <video/mipi_display.h>
 #include <linux/firmware.h>
 
+#include <linux/display_state.h>
 #include "dsi_panel.h"
 #include "dsi_display.h"
 #include "dsi_ctrl_hw.h"
@@ -31,6 +32,10 @@
 
 #include <drm/drm_notifier.h>
 #include <soc/qcom/socinfo.h>
+
+#ifdef CONFIG_KLAPSE
+#include <linux/klapse.h>
+#endif
 
 /**
  * topology is currently defined by a set of following 3 values:
@@ -72,6 +77,13 @@ enum dsi_dsc_ratio_type {
 	DSC_12BPC_8BPP,
 	DSC_RATIO_TYPE_MAX
 };
+
+bool display_on = true;
+
+bool is_display_on()
+{
+	return display_on;
+}
 
 static u32 dsi_dsc_rc_buf_thresh[] = {0x0e, 0x1c, 0x2a, 0x38, 0x46, 0x54,
 		0x62, 0x69, 0x70, 0x77, 0x79, 0x7b, 0x7d, 0x7e};
@@ -769,7 +781,7 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 	int rc = 0;
 
 	dsi_panel_exd_disable(panel);
-	
+
 	if (g_panel->panel_reset_skip) {
 			pr_info("%s: panel reset skip\n", __func__);
 			return rc;
@@ -1045,6 +1057,7 @@ static void dsi_panel_offon_mode_control(struct dsi_panel *panel, u32 bl_lvl)
 		if (panel->last_bl_lvl == 0 && panel->dsi_panel_off_mode == true) {
 			pr_debug("%s: set display on when last_bl_lvl=0\n", __func__);
 			panel->dsi_panel_off_mode = false;
+
 			panel_disp_param_send_lock(panel, DISPLAY_ON_MODE);
 		}
 	}
@@ -1357,11 +1370,6 @@ static int dsi_panel_parse_timing(struct device *parent,
 		pr_err("failed to read qcom,mdss-dsi-panel-framerate, rc=%d\n",
 		       rc);
 		goto error;
-	}
-
-	if (mode->refresh_rate > 60) {
-		pr_err("failed to apply mdss-dsi-panel-framerate");
-		mode->refresh_rate *= 2;
 	}
 
 	rc = dsi_panel_parse(of_node, fw_entry,
@@ -2755,9 +2763,6 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel,
 		panel->bl_config.type = DSI_BACKLIGHT_UNKNOWN;
 	}
 
-	panel->bl_config.dcs_type_ss = of_property_read_bool(of_node,
-						"qcom,mdss-dsi-bl-dcs-type-ss");
-
 	data = of_get_property(of_node, "qcom,bl-update-flag", NULL);
 	if (!data) {
 		panel->bl_config.bl_update = BL_UPDATE_NONE;
@@ -2772,7 +2777,6 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel,
 	panel->bl_config.dcs_type_ss = of_property_read_bool(of_node,
 						"qcom,mdss-dsi-bl-dcs-type-ss");
 
-
 	data = of_get_property(of_node, "qcom,bl-update-flag", NULL);
 	if (!data) {
 		panel->bl_config.bl_update = BL_UPDATE_NONE;
@@ -2782,31 +2786,10 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel,
 		pr_debug("[%s] No valid bl-update-flag: %s\n",
 						panel->name, data);
 		panel->bl_config.bl_update = BL_UPDATE_NONE;
-	}
-
-	rc = of_property_read_u32(of_node, "qcom,bl-update-delay", &val);
-	if (rc) {
-		pr_debug("[%s] bl-update-delay unspecified, defaulting to zero\n",
-			 panel->name);
-		panel->bl_config.bl_update_delay = 0;
-	} else {
-		panel->bl_config.bl_update_delay = val;
 	}
 
 	panel->bl_config.bl_scale = MAX_BL_SCALE_LEVEL;
 	panel->bl_config.bl_scale_ad = MAX_AD_BL_SCALE_LEVEL;
-
-	panel->bl_config.dcs_type_ss = of_property_read_bool(of_node,
-						"qcom,mdss-dsi-bl-dcs-type-ss");
-
-	rc = of_property_read_u32(of_node, "qcom,bl-update-delay", &val);
-	if (rc) {
-		pr_debug("[%s] bl-update-delay unspecified, defaulting to zero\n",
-			 panel->name);
-		panel->bl_config.bl_update_delay = 0;
-	} else {
-		panel->bl_config.bl_update_delay = val;
-	}
 
 	rc = of_property_read_u32(of_node, "qcom,mdss-dsi-bl-min-level", &val);
 	if (rc) {
@@ -3841,7 +3824,6 @@ static int dsi_panel_parse_mi_config(struct dsi_panel *panel,
 
 	rc = of_property_read_u32(of_node,
 		"qcom,mdss-panel-on-dimming-delay", &panel->panel_on_dimming_delay);
-
 	if (rc) {
 		panel->panel_on_dimming_delay = 0;
 		pr_info("Panel on dimming delay disabled\n");
@@ -5224,7 +5206,6 @@ int dsi_panel_disable(struct dsi_panel *panel)
 			goto error;
 		}
 	}
-
 	panel->panel_initialized = false;
 	panel->skip_dimmingon = STATE_NONE;
 	panel->fod_hbm_enabled = false;
